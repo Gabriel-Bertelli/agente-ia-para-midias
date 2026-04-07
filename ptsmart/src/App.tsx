@@ -21,8 +21,8 @@ import { InvestmentSuggestion } from './components/InvestmentSuggestion';
 import { CampaignAlerts } from './components/CampaignAlerts';
 
 // Configurações do Supabase (Pré-configuradas)
-const SUPABASE_URL = 'https://ackubuuqjwsxlrluomuw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFja3VidXVxandzeGxybHVvbXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NjYzMjYsImV4cCI6MjA4OTM0MjMyNn0.mER3M5pq2qmvcSUcGa2IChK4rwDHb6FOl0gx4OfA-SI';
+const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
 const DEFAULT_TABLE_NAME = 'base_data_tracker';
 
 const PRODUCT_OPTIONS = [
