@@ -150,10 +150,9 @@ function aggregateGoals(goals: GoalRow[], start: string, end: string): Map<strin
   const eDate = end   ? new Date(`${end}T23:59:59`)   : null;
 
   for (const g of goals) {
-    if (sDate && eDate) {
-      const gd = new Date(`${g.date}T00:00:00`);
-      if (gd < sDate || gd > eDate) continue;
-    }
+    const gd = new Date(`${g.date}T00:00:00`);
+    if (sDate && gd < sDate) continue;
+    if (eDate && gd > eDate) continue;
     if (!map.has(g.bu)) map.set(g.bu, { investimento: 0, leads: 0, matriculas: 0 });
     const buRow = map.get(g.bu)!;
     buRow.investimento += g.investimento;
@@ -199,7 +198,6 @@ function buildDailyChartData(
 
   const sDate = start ? new Date(`${start}T00:00:00`) : null;
   const eDate = end   ? new Date(`${end}T23:59:59`)   : null;
-  // Goals are never clipped by eDate — they may extend into the future
 
   // Map real values per day
   const realMap: Record<string, number> = {};
@@ -221,11 +219,12 @@ function buildDailyChartData(
     if (kpi === 'matriculas')   realMap[dateKey] += safeNum(d[matField ?? '']);
   }
 
-  // Map goal values per day — no upper date clip so future dates are included
+  // Map goal values per day — clipped by eDate to respect the user's filter
   const metaMap: Record<string, number> = {};
   for (const g of goals) {
     const gd = new Date(`${g.date}T00:00:00`);
     if (sDate && gd < sDate) continue;
+    if (eDate && gd > eDate) continue;
     if (filteredBUs.length > 0 && !filteredBUs.includes(g.bu)) continue;
     if (!metaMap[g.date]) metaMap[g.date] = 0;
     metaMap[g.date] += kpi === 'investimento' ? g.investimento : kpi === 'leads' ? g.leads : g.matriculas;
@@ -472,15 +471,16 @@ export function GoalsView({ data }: { data: any[] }) {
   React.useEffect(() => { if (minDate && !start) setStart(minDate); }, [minDate]);
   React.useEffect(() => { if (maxDate && !end)   setEnd(maxDate);   }, [maxDate]);
 
-  // Max date from goals (may be in the future — used so goal aggregations aren't clipped)
+  // Max date across all goal rows — used only by buildToGoTable so that future
+  // To-Go rows are still visible even when the user hasn't selected a future end date.
   const maxGoalDate = useMemo(() => {
     if (!goals.length) return '';
     return goals.map(g => g.date).reduce((a, b) => a > b ? a : b, '');
   }, [goals]);
 
-  // For goals/toGo we never clip by end — the "end" filter only bounds the real data.
-  // This lets future meta rows appear even when the dataset has no future dates.
-  const goalsEnd = maxGoalDate || end;
+  // The end date used for goal aggregations respects the user's filter.
+  // buildToGoTable receives maxGoalDate separately so it can show future rows.
+  const goalsEnd = end;
 
   const fetchGoals = async () => {
     setGoalsLoading(true); setGoalsError('');
@@ -547,8 +547,8 @@ export function GoalsView({ data }: { data: any[] }) {
   // ── To-Go table ───────────────────────────────────────────────────────────
 
   const toGoRows = useMemo(() =>
-    buildToGoTable(data, goals, availableKeys, start, goalsEnd, chartBUs, today),
-    [data, goals, availableKeys, start, end, chartBUs, today]);
+    buildToGoTable(data, goals, availableKeys, start, maxGoalDate || end, chartBUs, today),
+    [data, goals, availableKeys, start, end, maxGoalDate, chartBUs, today]);
 
   // ── Event handlers ────────────────────────────────────────────────────────
 
