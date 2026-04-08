@@ -268,12 +268,15 @@ export function InvestmentSuggestion({ data }: { data: any[] }) {
   const invField      = useMemo(() => findField(keys, 'investimento', 'investment', 'custo'), [keys]);
   const matField      = useMemo(() => findField(keys, 'matriculas', 'matricula', 'matriculas'), [keys]);
 
+  // Stable "today" reference — prevents re-renders caused by new Date() changing across midnight
+  const todayRef = useMemo(() => new Date(), []);
+
   const refDate = useMemo(() => {
-    if (!dateField || !data.length) return new Date();
+    if (!dateField || !data.length) return todayRef;
     const dates = data.map(d => parseLocalDate(d[dateField])).filter(d => !isNaN(d.getTime()));
-    if (!dates.length) return new Date();
+    if (!dates.length) return todayRef;
     return new Date(Math.max(...dates.map(d => d.getTime())));
-  }, [data, dateField]);
+  }, [data, dateField, todayRef]);
 
   const campaigns = useMemo(() => {
     if (!campaignField) return [];
