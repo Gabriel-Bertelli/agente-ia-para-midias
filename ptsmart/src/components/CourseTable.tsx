@@ -81,9 +81,11 @@ function aggregateCourses(
 
   // Base filter: date + tipo_campanha (non-course dimensions)
   const passBase = (d: any): boolean => {
-    if (dateField && sDate && eDate) {
+    if (dateField && (sDate || eDate)) {
       const dd = parseLocalDate(d[dateField]);
-      if (isNaN(dd.getTime()) || dd < sDate || dd > eDate) return false;
+      if (isNaN(dd.getTime())) return false;
+      if (sDate && dd < sDate) return false;
+      if (eDate && dd > eDate) return false;
     }
     if (opts.tipoCampanha && opts.tipoCampanha !== 'all' && tipoCampanhaField) {
       if (d[tipoCampanhaField] !== opts.tipoCampanha) return false;
