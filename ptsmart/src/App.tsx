@@ -25,6 +25,18 @@ const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
 const DEFAULT_TABLE_NAME = 'base_data_tracker';
 
+// Cliente Supabase instanciado uma única vez — evita recriar a cada fetch
+let _supabaseClient: ReturnType<typeof createClient> | null = null;
+let _supabaseClientKey = '';
+function getSupabaseClient() {
+  const key = `${SUPABASE_URL}::${SUPABASE_ANON_KEY}`;
+  if (!_supabaseClient || _supabaseClientKey !== key) {
+    _supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    _supabaseClientKey = key;
+  }
+  return _supabaseClient;
+}
+
 const PRODUCT_OPTIONS = [
   'Pós Artmed',
   'PUCPR DIGITAL',
@@ -1599,14 +1611,14 @@ export default function App() {
     setDownloadProgress(0);
 
     try {
-      if (!SUPABASE_URL.startsWith('https://') || !SUPABASE_URL.includes('.supabase.co')) {
-        throw new Error('A URL do Supabase pré-configurada parece inválida. Edite o código para inserir a URL correta.');
+      if (!SUPABASE_URL || !SUPABASE_URL.startsWith('https://') || !SUPABASE_URL.includes('.supabase.co')) {
+        throw new Error('URL do Supabase inválida ou não configurada. Verifique a variável VITE_SUPABASE_URL no arquivo .env.');
       }
       if (!SUPABASE_ANON_KEY) {
-        throw new Error('A Public Key pré-configurada é inválida. Edite o código para inserir a chave correta.');
+        throw new Error('Chave anônima do Supabase não configurada. Verifique a variável VITE_SUPABASE_ANON_KEY no arquivo .env.');
       }
 
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const supabase = getSupabaseClient();
       
       let allData: any[] = [];
       let hasMore = true;
@@ -1638,7 +1650,7 @@ export default function App() {
         }
 
         if (fetchedData && fetchedData.length > 0) {
-          for (let i = 0; i < fetchedData.length; i++) allData.push(fetchedData[i]);
+          allData = allData.concat(fetchedData);
           setDownloadProgress(allData.length);
           page++;
           if (fetchedData.length < pageSize) {
