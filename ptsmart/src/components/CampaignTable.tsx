@@ -88,10 +88,12 @@ function aggregateCampaigns(
   }> = {};
 
   for (const d of data) {
-    // Date filter
-    if (dateField && sDate && eDate) {
+    // Date filter — each bound applied independently
+    if (dateField && (sDate || eDate)) {
       const dd = parseLocalDate(d[dateField]);
-      if (isNaN(dd.getTime()) || dd < sDate || dd > eDate) continue;
+      if (isNaN(dd.getTime())) continue;
+      if (sDate && dd < sDate) continue;
+      if (eDate && dd > eDate) continue;
     }
     // Tipo campanha filter
     if (opts.tipoCampanha && opts.tipoCampanha !== 'all' && tipoCampanhaField) {
