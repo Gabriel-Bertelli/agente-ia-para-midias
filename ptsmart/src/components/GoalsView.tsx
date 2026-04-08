@@ -468,15 +468,22 @@ export function GoalsView({ data }: { data: any[] }) {
   const [chartKpi, setChartKpi]   = useState<KpiKey>('investimento');
   const [chartBUs, setChartBUs]   = useState<string[]>([]);   // empty = all
 
-  React.useEffect(() => { if (minDate && !start) setStart(minDate); }, [minDate]);
-  React.useEffect(() => { if (maxDate && !end)   setEnd(maxDate);   }, [maxDate]);
-
-  // Max date across all goal rows — used only by buildToGoTable so that future
-  // To-Go rows are still visible even when the user hasn't selected a future end date.
+  // Max date across all goal rows — declared before useEffects that depend on it.
+  // Used by buildToGoTable so future To-Go rows remain visible, and by the date
+  // input upper bound so users can select future dates present in goals.
   const maxGoalDate = useMemo(() => {
     if (!goals.length) return '';
     return goals.map(g => g.date).reduce((a, b) => a > b ? a : b, '');
   }, [goals]);
+
+  React.useEffect(() => { if (minDate && !start) setStart(minDate); }, [minDate]);
+  // Initialize end to the greater of maxDate (real data) and maxGoalDate (goals)
+  React.useEffect(() => {
+    if (!end) {
+      const upper = [maxDate, maxGoalDate].filter(Boolean).sort().at(-1) ?? '';
+      if (upper) setEnd(upper);
+    }
+  }, [maxDate, maxGoalDate]);
 
   // The end date used for goal aggregations respects the user's filter.
   // buildToGoTable receives maxGoalDate separately so it can show future rows.
@@ -604,13 +611,13 @@ export function GoalsView({ data }: { data: any[] }) {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a0a0bc', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>De</label>
-            <input type="date" value={start} min={minDate} max={end || maxDate}
+            <input type="date" value={start} min={minDate} max={end || maxGoalDate || maxDate}
               onChange={e => setStart(e.target.value)}
               style={{ padding: '6px 10px', fontSize: 13, border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a0a0bc', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Até</label>
-            <input type="date" value={end} min={start || minDate} max={maxDate}
+            <input type="date" value={end} min={start || minDate} max={maxGoalDate || maxDate}
               onChange={e => setEnd(e.target.value)}
               style={{ padding: '6px 10px', fontSize: 13, border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none' }} />
           </div>
