@@ -359,6 +359,9 @@ function AlertCard({ alert, expanded, onToggle }: {
 export function CampaignAlerts({ data }: { data: any[] }) {
   const availableKeys = useMemo(() => data.length ? Object.keys(data[0]) : [], [data]);
 
+  // Stable reference date — avoids midnight-crossing inconsistencies across renders
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+
   // Unique filter options
   const produtoField  = useMemo(() => findField(availableKeys, 'produto'),       [availableKeys]);
   const tipoField     = useMemo(() => findField(availableKeys, 'tipo_campanha'), [availableKeys]);
@@ -380,7 +383,7 @@ export function CampaignAlerts({ data }: { data: any[] }) {
   const [threshold,      setThreshold]      = useState(THRESHOLD_WARNING);
 
   // Build all alerts from raw data (memoized — expensive op)
-  const allAlerts = useMemo(() => buildAlerts(data, availableKeys), [data, availableKeys]);
+  const allAlerts = useMemo(() => buildAlerts(data, availableKeys), [data, availableKeys, today]);
 
   // Apply filters
   const filtered = useMemo(() => {
